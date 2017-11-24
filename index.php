@@ -1,191 +1,158 @@
 <?php
-
-ini_set('odbc.defaultlrl', 9000000);//muda configuração do PHP para trabalhar com imagens no DB
-
 include('../db/bancodedados.php');
 include('../auth/controle.php');
-
 //Funcionalidade Gravar Cadastro
-if(isset($_POST['btnProd'])){
-    unset($_GET['cadastrar']);
-
-    //Imagem
-
-    if(is_file($_FILES['file_image']['tmp_name'])){
-
-        $file = fopen($_FILES['file_image']['tmp_name'], 'rb');
-        $imagem = fread($file, filesize($_FILES['file_image']['tmp_name']));
-        fclose($file);
-
-    }else{
-
-        $imagem = '';
-    }
-
-    //Fim imagem
-    
-    $_POST['ativoProduto'] = isset($_POST['ativoProduto']) ? 1 : 0;
-    
-    $_POST['ativoProduto'] = (int) $_POST['ativoProduto'];
-    
-    $_POST['nomeProduto'] = utf8_decode($_POST['nomeProduto']);
-    $_POST['descProduto'] = utf8_decode($_POST['descProduto']);
-    
-    $stmt = odbc_prepare($db, " INSERT INTO Produto
-                                (nomeProduto,
-                                descProduto,
-                                precProduto,
-                                idCategoria,
-                                imagem,
-                                ativoProduto)
-                                VALUES
-                                (?,?,?,?,?,?)");
-    if(odbc_execute($stmt, array(   $_POST['nomeProduto'],
-                                    $_POST['descProduto'],
-                                    $_POST['precProduto'],
-                                    $_POST['idCategoria'],
-                                    $imagem,
-                                    $_POST['ativoProduto']))){
-        $msg = 'Produto cadastrado com sucesso!';           
-    }else{
-        $erro = 'Erro ao gravar o produto!';
-    }                               
-             
+if(isset($_POST['btnGravar'])){
+	unset($_GET['cadastrar']);
+	if(	!empty($_POST['loginUsuario']) &&
+		!empty($_POST['nomeUsuario']) &&
+		!empty($_POST['senhaUsuario'])){
+		
+		$_POST['usuarioAtivo'] = 
+			isset($_POST['usuarioAtivo']) ? 1 : 0;
+		
+		$_POST['usuarioAtivo'] = (int) $_POST['usuarioAtivo'];
+		
+		$_POST['nomeUsuario'] = utf8_decode($_POST['nomeUsuario']);
+		$_POST['senhaUsuario'] = utf8_decode($_POST['senhaUsuario']);
+		
+		$stmt = odbc_prepare($db, "	INSERT INTO Usuario
+									(loginUsuario,
+									nomeUsuario,
+									senhaUsuario,
+									tipoPerfil,
+									usuarioAtivo)
+									VALUES
+									(?,?,?,?,?)");
+		if(odbc_execute($stmt, array(	$_POST['loginUsuario'],
+										$_POST['nomeUsuario'],
+										$_POST['senhaUsuario'],
+										$_POST['perfilUsuario'],
+										$_POST['usuarioAtivo']))){
+			$msg = 'Usu&aacute;rio gravado com sucesso!';			
+		}else{
+			$erro = 'Erro ao gravar o usu&aacute;rio';
+		}								
+							
+	}else{
+		
+		$erro = 'Os campos: Login, Nome e Senha 
+					s&atilde;o obrigat&oacute;rios';
+		
+	}
 }
 //FIM Funcionalidade Gravar Cadastro
-
 //Funcionalidade Editar Cadastro
 if(isset($_POST['btnAtualizar'])){
 	unset($_GET['editar']);
-	if(	!empty($_POST['nomeProduto'])){		
+	if(	!empty($_POST['loginUsuario']) &&
+		!empty($_POST['nomeUsuario'])){
 		
-		$_POST['ativoProduto'] = 
-			isset($_POST['ativoProduto']) ? 1 : 0;
+		$_POST['usuarioAtivo'] = 
+			isset($_POST['usuarioAtivo']) ? 1 : 0;
 		
-		$_POST['ativoProduto'] = (int) $_POST['ativoProduto'];
-
-	$_POST['nomeProduto'] = utf8_decode($_POST['nomeProduto']);
-	$_POST['descProduto'] = utf8_decode($_POST['descProduto']);
-	$_POST['precProduto'] = utf8_decode($_POST['precProduto']);
-	
-	$arquivo = $_FILES['imagem']['tmp_name'];
-	$image = @fopen($arquivo, 'r');
-	$conteudo = @fread($image, filesize($arquivo));
-	//exit();
-
-	if(empty($arquivo)){
-
-	$stmt = odbc_prepare($db, "	UPDATE 
-									Produto
-								SET 
-									nomeProduto = ?,
-									descProduto = ?,
-									precProduto = ?,
-									ativoProduto = ?	
-								WHERE
-									idProduto = ?");
-	if(odbc_execute($stmt, array(	$_POST['nomeProduto'],
-									$_POST['descProduto'],
-									$_POST['precProduto'],
-									$_POST['ativoProduto'],
-									$_POST['idProduto']))){
-		$msg = 'Produto atualizado com sucesso!';			
+		$_POST['usuarioAtivo'] = (int) $_POST['usuarioAtivo'];
+		
+		$_POST['nomeUsuario'] = utf8_decode($_POST['nomeUsuario']);
+		$_POST['senhaUsuario'] = utf8_decode($_POST['senhaUsuario']);
+		
+		//Se não for informada nova senha, mantém a antiga
+		if(empty($_POST['senhaUsuario'])){
+			$stmt = odbc_prepare($db, "	UPDATE 
+											Usuario
+										SET 
+											loginUsuario = ?,
+											nomeUsuario = ?,
+											tipoPerfil = ?,
+											usuarioAtivo = ?
+										WHERE
+											idUsuario = ?");
+										
+			if(odbc_execute($stmt, array(	$_POST['loginUsuario'],
+											$_POST['nomeUsuario'],
+											$_POST['perfilUsuario'],
+											$_POST['usuarioAtivo'],
+											$_POST['idUsuario']))){
+				$msg = 'Usu&aacute;rio atualizado com sucesso!';			
+			}else{
+				$erro = 'Erro ao atualizar o usu&aacute;rio';
+			}
+		//Se for informada nova senha, altere	
+		}else{	
+		
+			$stmt = odbc_prepare($db, "	UPDATE 
+											Usuario
+										SET 
+											loginUsuario = ?,
+											nomeUsuario = ?,
+											senhaUsuario = ?,
+											tipoPerfil = ?,
+											usuarioAtivo = ?
+										WHERE
+											idUsuario = ?");
+										
+			if(odbc_execute($stmt, array(	$_POST['loginUsuario'],
+											$_POST['nomeUsuario'],
+											$_POST['senhaUsuario'],
+											$_POST['perfilUsuario'],
+											$_POST['usuarioAtivo'],
+											$_POST['idUsuario']))){
+				$msg = 'Usu&aacute;rio atualizado com sucesso!';			
+			}else{
+				$erro = 'Erro ao atualizar o usu&aacute;rio';
+			}								
+		}					
 	}else{
-		$erro = 'Erro ao atualizar o Produto';
-	}
-}else{
-	$stmt = odbc_prepare($db, "	UPDATE 
-									Produto
-								SET 
-									nomeProduto = ?,
-									descProduto = ?,
-									precProduto = ?,
-									ativoProduto = ?,
-									imagem = ?
-									
-								WHERE
-									idProduto = ?");
-	if(odbc_execute($stmt, array(	$_POST['nomeProduto'],
-									$_POST['descProduto'],
-									$_POST['precProduto'],
-									$_POST['ativoProduto'],
-									$conteudo,
-									$_POST['idProduto']))){
-		$msg = 'Produto atualizado com sucesso!';			
-	}else{
-		$erro = 'Erro ao atualizar o Produto';
+		
+		$erro = 'Os campos: Login, Nome e Senha 
+					s&atilde;o obrigat&oacute;rios';
+		
 	}
 }
-								
-}}
-		
-//FIM funcionalidade editar 
-		
+//FIM Funcionalidade Editar Cadastro
 //Funcionalidade Excluir
 if(isset($_GET['excluir'])){
-    if(is_numeric($_GET['excluir'])){
-        
-        if(odbc_exec($db, " DELETE FROM 
-                                Produto 
-                            WHERE
-                                idProduto = {$_GET['excluir']}")){
-            $msg = 'Produto removido com sucesso';                       
-        }else{
-            $erro = 'Erro ao excluir o produto';
-        }
-        
-    }else{
-        $erro = 'C&oacute;digo inv&aacute;lido';
-    }
+	if(is_numeric($_GET['excluir'])){
+		
+		if(odbc_exec($db, "	DELETE FROM 
+								Usuario 
+							WHERE
+								idUsuario = {$_GET['excluir']}")){
+			$msg = 'Usu&aacute;rio removido com sucesso';						
+		}else{
+			$erro = 'Erro ao excluir o usu&aacute;rio';
+		}
+		
+	}else{
+		$erro = 'C&oacute;digo inv&aacute;lido';
+	}
 }
 //FIM Funcionalidade Excluir
-
 //Funcionalidade Listar
-$q = odbc_exec($db, 'SELECT idProduto, nomeProduto, descProduto, 
-								precProduto,
-								descontoPromocao,
-								idCategoria,
-								ativoProduto,
-								idproduto,
-								qtdMinEstoque,
-                                imagem 
-			         FROM Produto');
-
+$q = odbc_exec($db, '	SELECT 	idUsuario, loginUsuario,
+								nomeUsuario, tipoPerfil, 
+								usuarioAtivo
+						FROM 
+								Usuario');
 while($r = odbc_fetch_array($q)){
 	
-	$r['nomeProduto'] = utf8_encode($r['nomeProduto']);
-	$r['descProduto'] = utf8_encode($r['descProduto']);
-
-	$produto[$r['idProduto']] = $r;
-	//print_r(array_keys($r));
-	//print_r($r['ativoProduto']);
-
+	$r['nomeUsuario'] = utf8_encode($r['nomeUsuario']);
+	
+	$usuarios[$r['idUsuario']] = $r;
+	
 }
 //FIM Funcionalidade Listar
-$q = odbc_exec($db, 'SELECT idCategoria, nomeCategoria, descCategoria FROM Categoria');
-
-while($r = odbc_fetch_array($q)){
-	
-	$r['nomeCategoria'] = utf8_encode($r['nomeCategoria']);
-	$r['descCategoria'] = utf8_encode($r['descCategoria']);
-	
-	$categorias[$r['idCategoria']] = $r;
-	
-}
-
-//
 if(isset($_GET['cadastrar'])){//FORM Cadastrar
 	include('template_cadastrar.php');
 	
 }elseif(isset($_GET['editar'])){//FORM Editar
 	if(is_numeric($_GET['editar'])){
-		$q = odbc_exec($db, "	SELECT 	idProduto, nomeProduto,
-										descProduto, precProduto, ativoProduto,
-										imagem
-										
-								FROM Produto 
-								WHERE idProduto = {$_GET['editar']}");
-		$dadosProduto = odbc_fetch_array($q);
+		$q = odbc_exec($db, "	SELECT 	idUsuario, loginUsuario,
+										nomeUsuario, tipoPerfil, 
+										usuarioAtivo
+								FROM Usuario 
+								WHERE idUsuario = {$_GET['editar']}");
+		$dados_usuario = odbc_fetch_array($q);
 	}else{
 		$erro = 'C&oacute;digo inv&aacute;lido';
 	}
@@ -193,5 +160,6 @@ if(isset($_GET['cadastrar'])){//FORM Cadastrar
 	
 }else{//FORM Listar
 	include('template.php');
+	
 }
 ?>
